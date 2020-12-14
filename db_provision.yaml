@@ -1,0 +1,35 @@
+
+---
+- name: playbook for configuring db server to get posts working
+  hosts: db_server
+  gather_facts: yes
+  become: true
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: "yes"
+        update_cache: yes
+        cache_valid_time: 86400 #One day
+
+    - name: install mongodb
+      apt: pkg=mongodb-org state=latest update_cache=yes
+      notify:
+      - start mongodb
+
+    - name: remove mongod.conf file
+      file:
+        path: /etc/mongod.conf
+        state: absent
+  
+
+    - name: replacing mongod file with new one, which has already been uploaded to ansible controller
+      copy:
+        src: /home/ubuntu/mongod.conf
+        dest: /etc/mongod.conf
+        mode: 0644
+
+    - name: start mongodb
+      service:
+        name: mongodb
+        state: restarted
